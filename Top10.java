@@ -34,7 +34,7 @@ public class Top10 extends Configured implements Tool {
     }
     
     public static class DescendingIntWritableComparable extends IntWritable {
-        /** A decreasing Comparator optimized for IntWritable. */ 
+        /** A decreasing Comparator optimized for IntWritable. */
         public static class DecreasingComparator extends Comparator {
             public int compare(WritableComparable a, WritableComparable b) {
                 return -super.compare(a, b);
@@ -44,7 +44,7 @@ public class Top10 extends Configured implements Tool {
             }
         }
     }
-
+    
     @Override
     public int run(String[] args) throws Exception {
         System.out.println(Arrays.toString(args));
@@ -92,79 +92,79 @@ public class Top10 extends Configured implements Tool {
     }
     
     public static class MapCountWordPair extends Mapper<LongWritable, Text, Text, IntWritable> {
-    	private String[] targetWords = {"text", "refers", "edition", "unavailable", "print", "one", "business", "book", "read", "series"}; 
-    	
+        private String[] targetWords = {"text", "refers", "edition", "unavailable", "print", "one", "business", "book", "read", "series"};
+        
         @Override
         public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-        	try {
-        		JSONObject jsonObject = new JSONObject(value.toString());
-        		String[] words = jsonObject.getString("description").split("\\s+");
+            try {
+                JSONObject jsonObject = new JSONObject(value.toString());
+                String[] words = jsonObject.getString("description").split("\\s+");
                 
                 ArrayList<String> existWords = new ArrayList<String>();
                 for (int i=0; i<words.length; i++)
-                	for (String targetWord : targetWords)
-                		if (words[i].equals(targetWord))
-                			existWords.add(targetWord);
+                    for (String targetWord : targetWords)
+                        if (words[i].equals(targetWord))
+                            existWords.add(targetWord);
                 
                 if (existWords.size() == 0)
-                	return ;
+                    return ;
                 
-                search:
+            search:
                 for (int i=0; i<words.length; i++){
-                	for (String target : existWords)
-                		if (target.equals(words[i]))
-                			continue search;
-                	
-                	for (String target : existWords)
-                		context.write(new Text(target + "," + words[i]), new IntWritable(1));
+                    for (String target : existWords)
+                        if (target.equals(words[i]))
+                            continue search;
+                    
+                    for (String target : existWords)
+                        context.write(new Text(target + "," + words[i]), new IntWritable(1));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
-
+    
     public static class ReduceCountWordPair extends Reducer<Text, IntWritable, Text, IntWritable> {
         public void reduce(Text key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
-        	int count = 0;
-        	
+            int count = 0;
+            
             for (IntWritable val : values)
-            	count++;
+                count++;
             
             context.write(key, new IntWritable(count));
         }
     }
     
-    public static class MapGetTop10 extends Mapper<LongWritable, Text, IntWritable, Text> { 
+    public static class MapGetTop10 extends Mapper<LongWritable, Text, IntWritable, Text> {
         @Override
         public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-        	String[] wordPairCount = value.toString().split("\t");
-        	
-        	context.write(new IntWritable(Integer.parseInt(wordPairCount[1])), new Text(wordPairCount[0]));
+            String[] wordPairCount = value.toString().split("\t");
+            
+            context.write(new IntWritable(Integer.parseInt(wordPairCount[1])), new Text(wordPairCount[0]));
         }
     }
-
+    
     public static class ReduceGetTop10 extends Reducer<IntWritable, Text, Text, IntWritable> {
-    	private Map<String, Integer> count = new HashMap<String, Integer>();
-    	
+        private Map<String, Integer> count = new HashMap<String, Integer>();
+        
         public void reduce(IntWritable key, Iterable<Text> values, Context context)
         throws IOException, InterruptedException {
-        	
-        	for (Text wordPair : values) {
-        		String[] words = wordPair.toString().split(",");
-        		
-        		if (!count.containsKey(words[0]))
-        			count.put(words[0], 1);
-        		else if(count.get(words[0]) >= 10)
-        			continue;
-        		else
-        			count.put(words[0], count.get(words[0])+1);
-        		
-        		context.write(new Text(words[0] + " " + words[1]), key);
-			}
+            
+            for (Text wordPair : values) {
+                String[] words = wordPair.toString().split(",");
+                
+                if (!count.containsKey(words[0]))
+                    count.put(words[0], 1);
+                else if(count.get(words[0]) >= 10)
+                    continue;
+                else
+                    count.put(words[0], count.get(words[0])+1);
+                
+                context.write(new Text(words[0] + " " + words[1]), key);
+            }
         }
     }
 }
