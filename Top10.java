@@ -114,7 +114,8 @@ public class Top10 extends Configured implements Tool {
                 for (int i=0; i<words.length; i++){
                     for (String target : existWords)
                         if (target.equals(words[i]))
-                            continue search;
+                            continue search;   // 코드 블락 이름을 활용한 분기는 잘 활용되지 않아, 읽는 사람으로 하여금 혼란을 줄 수 있어요.
+                                               // 참고로 continue 와 라벨을 함께 사용한 코드는 처음 봅니다.
                     
                     for (String target : existWords)
                         context.write(new Text(target + "," + words[i]), new IntWritable(1));
@@ -142,7 +143,7 @@ public class Top10 extends Configured implements Tool {
         public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
             String[] wordPairCount = value.toString().split("\t");
-            
+            // partitioner 의 소팅 기능을 활용해서 빈도수를 정렬하는 아이디어는 좋아요. 하지만 과제에서 찾으려는건 각 target word 별 빈도수에요.
             context.write(new IntWritable(Integer.parseInt(wordPairCount[1])), new Text(wordPairCount[0]));
         }
     }
